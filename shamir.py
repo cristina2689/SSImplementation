@@ -26,18 +26,6 @@ def computeDifs(current, shares):
             diff = diff * (current[0] - shares[index][0])
     return diff
 
-# return SUM(PRODUCTS(n)) from roots
-# useful for Viete's formulas
-def partialSumOfN(roots, n):
-    rsum = 0
-    for i in range(len(roots) - n + 1):
-        aux = 1
-        for j in range(i,i+n):
-            aux = aux * roots[j][0]
-        rsum = rsum + aux
-    return rsum
-
-
 def product(roots):
     return reduce(lambda mul, (x,y): mul * x, roots, 1)
 
