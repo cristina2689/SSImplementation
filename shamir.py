@@ -1,5 +1,6 @@
 from Crypto.Util import number
 import numpy as np
+from operator import mul
 
 # target = the secret to be split
 # n = number of shares of the secret wanted
@@ -8,14 +9,14 @@ import numpy as np
 def getShares(target, n, k):
     coefs = []
     shares = []
+    for i in range(k - 1):
+        coefs.append(number.getRandomInteger(8))
     coefs.append(target) # secret is f(0)
-    for i in range(k):
-        coefs.append(number.getRandomInteger(16))
     npoly = np.poly1d(coefs)
+    print npoly
+    print "Secret is", npoly(0)
     for i in range(1, n):
-        print i
-        shares.append((i,npoly(i)))
-        print shares[i-1]
+        shares.append((i, npoly(i)))
     return shares
 
 def computeDifs(current, shares):
@@ -23,53 +24,41 @@ def computeDifs(current, shares):
     for index in range(len(shares)):
         if shares[index][0] != current[0]:
             diff = diff * (current[0] - shares[index][0])
-    print "diff is ",diff
     return diff
 
 # return SUM(PRODUCTS(n)) from roots
 # useful for Viete's formulas
-def partialSumOfN(roots, n, i=0):
+def partialSumOfN(roots, n):
     rsum = 0
-    for i in range(len(roots) - n):
+    for i in range(len(roots) - n + 1):
         aux = 1
         for j in range(i,i+n):
             aux = aux * roots[j][0]
-        rsum + aux
+        rsum = rsum + aux
     return rsum
 
-def getSecret(shares):
-    # construct a polynom with Lagrange Interpolation
-    # f(x) = SUM(yi, lagrangepol(x))
-    # lagrangepol(x) of degree (k -1) 
-    coefs = [0] * len(shares)
 
+def product(roots):
+    return reduce(lambda mul, (x,y): mul * x, roots, 1)
+
+# Use Lagrange Interpolation to find the initial polynom
+# Each x of the shares is a root for the ecuation.
+def getSecret(shares):
+    secret = 0
+    P = product(shares)
     for i in range(len(shares)):
         dif = computeDifs(shares[i], shares)
-        coefi = partialSumOfN(shares, len(shares) - i)
-        print coefi
-        if (len(shares) -i) % 2 :
-            coefi  = (-1)*coefi
-        coefs[i] = coefs[i] + float (coefi * shares[i][1] / dif)
-    print coefs
+        aux = (P / shares[i][0])
+        if ((len(shares) - 1) % 2) == 1 :
+            aux = aux * (-1)
+        aux = float (aux * shares[i][1] / dif)
+        secret = secret + aux
+    return secret
 
 sh = getShares(1234, 7, 3)
-print "shares are ",sh
-computeDifs(sh[0], sh)
-getSecret(sh)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+print "shares are ",sh[0:3]
+print "---Test Product --"
+print product(sh[0:3])
+print "---Test Decomposition--"
+print getSecret(sh[0:3])
 
